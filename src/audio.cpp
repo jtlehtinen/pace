@@ -1,17 +1,17 @@
 #include "audio.h"
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 
 namespace {
-
-  void FillWithSineWave(std::vector<Stereo>& buffer) {
+  void FillWithSineWave(std::vector<Stereo>& buffer, SineWave& sine_wave) {
     constexpr float kpi = 3.14159265359f;
     constexpr float ktau = 2.0f * kpi;
 
-    float freq = 261.63f;
-    float t = 0.0f;
-    float tstep = ktau / freq;
-    float amplitude = 3000.0f;
+    float t = sine_wave.t;
+    float frequency = sine_wave.frequency;
+    float tstep = ktau / frequency;
+    float amplitude = sine_wave.amplitude;
 
     for (size_t i = 0; i < buffer.size(); ++i) {
       auto value = static_cast<int16_t>(amplitude * sinf(t));
@@ -24,17 +24,32 @@ namespace {
         t -= ktau;
       }
     }
+
+    sine_wave.t = t;
   }
 
+  void sound_thread_func(SoundThreadContext* ctx) {
+    // @TODO: Ensure sound thread does not block on
+    // WaitForSingleObjectEx on exit.
+    while (!ctx->quit) {
+      // @TODO: timeout...
+      if (WaitForSingleObjectEx(ctx->voice_callback->buffer_end_event, INFINITE, false) == WAIT_TIMEOUT) {
+        break;
+      }
+
+      // @TODO: Do sound buffers require double buffering?
+      // Can't hear anything wrong in the sine wave output,
+      // so maybe not.
+
+      FillWithSineWave(*ctx->samples, ctx->sine_wave);
+      ctx->source_voice->SubmitSourceBuffer(ctx->buffer);
+    }
+  }
 }
 
-void VoiceCallback::OnVoiceProcessingPassStart(UINT32 bytes_required) { }
-void VoiceCallback::OnVoiceProcessingPassEnd() { }
-void VoiceCallback::OnStreamEnd() { }
-void VoiceCallback::OnBufferStart(void* buffer_context) { }
-void VoiceCallback::OnBufferEnd(void* buffer_context) { }
-void VoiceCallback::OnLoopEnd(void* buffer_context) { }
-void VoiceCallback::OnVoiceError(void* buffer_context, HRESULT error) { }
+void VoiceCallback::OnBufferEnd(void* buffer_context) {
+  SetEvent(buffer_end_event);
+}
 
 bool AudioSystem::Initialize(uint32_t sample_rate) {
   // @TODO: unnecessary?
@@ -88,29 +103,43 @@ bool AudioSystem::Initialize(uint32_t sample_rate) {
     return false;
   }
 
-  output.resize(sample_rate);
-  const uint32_t buffer_size = static_cast<uint32_t>(output.size() * sizeof(Stereo));
+  output_samples.resize(sample_rate / 10);
+  const size_t buffer_size = output_samples.size() * sizeof(Stereo);
   assert(buffer_size <= XAUDIO2_MAX_BUFFER_BYTES);
 
-  FillWithSineWave(output);
+  output_buffer.Flags = 0;
+  output_buffer.AudioBytes = static_cast<uint32_t>(buffer_size);
+  output_buffer.pAudioData = reinterpret_cast<const BYTE*>(output_samples.data());
+  output_buffer.PlayBegin = 0;
+  output_buffer.PlayLength = 0;
+  output_buffer.LoopBegin = XAUDIO2_NO_LOOP_REGION;
+  output_buffer.LoopLength = 0;
+  output_buffer.LoopCount = 0;
+  output_buffer.pContext = nullptr;
 
-  buffer.Flags = 0;
-  buffer.AudioBytes = buffer_size;
-  buffer.pAudioData = reinterpret_cast<const BYTE*>(output.data());
-  buffer.PlayBegin = 0;
-  buffer.PlayLength = buffer_size / sizeof(Stereo);
-  buffer.LoopBegin = 0;
-  buffer.LoopLength = buffer_size / sizeof(Stereo);
-  buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-  buffer.pContext = nullptr;
-
-  source_voice->SubmitSourceBuffer(&buffer);
+  source_voice->SubmitSourceBuffer(&output_buffer);
   source_voice->Start(0);
+
+  // start the sound thread
+  sound_thread_context.voice_callback = &voice_callback;
+  sound_thread_context.source_voice = source_voice;
+  sound_thread_context.buffer = &output_buffer;
+  sound_thread_context.samples = &output_samples;
+  sound_thread_context.sine_wave.frequency = 261.63f;
+  sound_thread_context.sine_wave.amplitude = 3000.0f;
+  sound_thread_context.sine_wave.t = 0.0f;
+
+  sound_thread = std::thread(sound_thread_func, &sound_thread_context);
 
   return true;
 }
 
 void AudioSystem::Terminate() {
+  sound_thread_context.quit = true;
+  sound_thread.join();
+
+  source_voice->Stop();
+
   source_voice->DestroyVoice();
   source_voice = nullptr;
 
