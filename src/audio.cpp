@@ -1,4 +1,32 @@
 #include "audio.h"
+#include <assert.h>
+#include <math.h>
+
+namespace {
+
+  void FillWithSineWave(std::vector<Stereo>& buffer) {
+    constexpr float kpi = 3.14159265359f;
+    constexpr float ktau = 2.0f * kpi;
+
+    float freq = 261.63f;
+    float t = 0.0f;
+    float tstep = ktau / freq;
+    float amplitude = 3000.0f;
+
+    for (size_t i = 0; i < buffer.size(); ++i) {
+      auto value = static_cast<int16_t>(amplitude * sinf(t));
+      buffer[i].left = value;
+      buffer[i].right = value;
+      t += tstep;
+
+      // float precision
+      while (t > ktau) {
+        t -= ktau;
+      }
+    }
+  }
+
+}
 
 void VoiceCallback::OnVoiceProcessingPassStart(UINT32 bytes_required) { }
 void VoiceCallback::OnVoiceProcessingPassEnd() { }
@@ -59,6 +87,25 @@ bool AudioSystem::Initialize(uint32_t sample_rate) {
     xaudio->Release();
     return false;
   }
+
+  output.resize(sample_rate);
+  const uint32_t buffer_size = static_cast<uint32_t>(output.size() * sizeof(Stereo));
+  assert(buffer_size <= XAUDIO2_MAX_BUFFER_BYTES);
+
+  FillWithSineWave(output);
+
+  buffer.Flags = 0;
+  buffer.AudioBytes = buffer_size;
+  buffer.pAudioData = reinterpret_cast<const BYTE*>(output.data());
+  buffer.PlayBegin = 0;
+  buffer.PlayLength = buffer_size / sizeof(Stereo);
+  buffer.LoopBegin = 0;
+  buffer.LoopLength = buffer_size / sizeof(Stereo);
+  buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+  buffer.pContext = nullptr;
+
+  source_voice->SubmitSourceBuffer(&buffer);
+  source_voice->Start(0);
 
   return true;
 }

@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Windows.h>
-#include <stdint.h>
 #include <wrl/client.h>
 #include <xaudio2.h>
+#include <stdint.h>
+#include <vector>
 
 using SoundSample = int16_t;
 
@@ -29,6 +30,9 @@ private:
   IXAudio2SourceVoice* source_voice = nullptr;
   VoiceCallback voice_callback;
   WAVEFORMATEX format;
+  XAUDIO2_BUFFER buffer;
+
+  std::vector<Stereo> output;
 
 public:
   bool Initialize(uint32_t sample_rate);

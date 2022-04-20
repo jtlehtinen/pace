@@ -16,7 +16,7 @@ public:
 };
 
 bool Application::Initialize() {
-  if (audio.Initialize(44100)) return false;
+  if (!audio.Initialize(44100)) return false;
 
   return true;
 }
@@ -26,6 +26,7 @@ void Application::Terminate() {
 }
 
 void Application::Run() {
+  Sleep(10000);
   // @TODO: do something...
 }
 
