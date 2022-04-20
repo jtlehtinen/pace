@@ -1,0 +1,3 @@
+# paceit
+
+CLI metronome.
