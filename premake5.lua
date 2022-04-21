@@ -1,4 +1,4 @@
-workspace "paceit"
+workspace "pace"
   location "project/"
   configurations {"debug", "release"}
   language "C++"
@@ -19,7 +19,7 @@ filter "configurations:debug"
 filter "configurations:release"
   optimize "On"
 
-project "paceit"
+project "pace"
   location "project/"
   kind "ConsoleApp"
   targetdir "project/bin/%{cfg.platform}/%{cfg.buildcfg}"
