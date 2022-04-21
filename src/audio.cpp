@@ -30,6 +30,8 @@ namespace {
   }
 
   void PlaySoundBuffer(SoundBuffer* sb) {
+    if (!sb) return;
+
     sb->voice->SubmitSourceBuffer(&sb->buffer);
     sb->voice->Start(0);
   }
