@@ -12,9 +12,6 @@ struct Stereo {
   SoundSample right;
 };
 
-using Sound = uint32_t;
-constexpr Sound kInvalidSound = ~(0u);
-
 struct SoundBuffer {
   std::vector<Stereo> samples;
   IXAudio2SourceVoice* voice = nullptr;
