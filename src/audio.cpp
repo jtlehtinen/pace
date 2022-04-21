@@ -29,12 +29,17 @@ namespace {
     return sb;
   }
 
-  void DestroySoundBuffer(SoundBuffer* buffer) {
-    if (buffer && buffer->voice) {
-      buffer->voice->Stop();
-      buffer->voice->DestroyVoice();
+  void PlaySoundBuffer(SoundBuffer* sb) {
+    sb->voice->SubmitSourceBuffer(&sb->buffer);
+    sb->voice->Start(0);
+  }
+
+  void DestroySoundBuffer(SoundBuffer* sb) {
+    if (sb && sb->voice) {
+      sb->voice->Stop();
+      sb->voice->DestroyVoice();
     }
-    delete buffer;
+    delete sb;
   }
 }
 
@@ -83,6 +88,7 @@ bool AudioSystem::Play(const std::vector<Stereo>& samples, size_t sample_rate) {
 
   DestroySoundBuffer(buffer);
   buffer = CreateSoundBuffer(xaudio, samples, sample_rate);
+  PlaySoundBuffer(buffer);
 
   return true;
 }
