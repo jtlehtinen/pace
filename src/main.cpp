@@ -12,6 +12,22 @@ constexpr double kTAU = 2.0 * kPI;
 // @TODO: Remove this global...
 static std::atomic<bool> quit = false;
 
+static double Clamp(double value, double min, double max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+static double Smoothstep(double edge0, double edge1, double value) {
+  double t = Clamp((value - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+  return t * t * (3.0 - 2.0 * t);
+}
+
+static double EaseInOut(double u) {
+  double ease_region = 0.3;
+  return Smoothstep(0.0, ease_region, u) - Smoothstep(1.0 - ease_region, 1.0, u);
+}
+
 std::vector<Stereo> GenerateBeat(double sample_rate, double tempo) {
   // @NOTE: Figure out the minimum sound buffer size
   // in samples we can loop to playback this beat.
@@ -28,7 +44,7 @@ std::vector<Stereo> GenerateBeat(double sample_rate, double tempo) {
   first_sample[2] = length_in_samples / 2;
   first_sample[3] = length_in_samples * 3 / 4;
 
-  constexpr size_t tick_length_in_samples = 64 * 24;
+  constexpr size_t tick_length_in_samples = 2048;
 
   constexpr double first_beat_frequency = 523.2511; // C5
   constexpr double other_beat_frequency = 261.625565; // C4
@@ -42,10 +58,12 @@ std::vector<Stereo> GenerateBeat(double sample_rate, double tempo) {
     double t = 0.0;
     double tstep = kTAU / samples_per_period;
 
-    for (size_t j = first_sample[i]; j < first_sample[i] + tick_length_in_samples; ++j) {
-      int16_t value = static_cast<int16_t>(static_cast<double>(INT16_MAX) * sin(t));
-      result[j].left = value;
-      result[j].right = value;
+    for (size_t j = 0; j < tick_length_in_samples; ++j) {
+      double amplitude = EaseInOut(static_cast<double>(j) / (static_cast<double>(tick_length_in_samples - 1)));
+
+      int16_t value = static_cast<int16_t>(amplitude * static_cast<double>(INT16_MAX) * sin(t));
+      result[j + first_sample[i]].left = value;
+      result[j + first_sample[i]].right = value;
       t += tstep;
     }
   }
