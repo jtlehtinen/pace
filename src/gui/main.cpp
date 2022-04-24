@@ -24,7 +24,7 @@ int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cm
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window = glfwCreateWindow(1280, 720, "pace", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(400, 240, "pace", nullptr, nullptr);
   if (window == nullptr)
     return 1;
 
@@ -55,7 +55,7 @@ int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cm
   io.FontDefault = open_sans_font;
 
   Application application;
-  if (application.Init()) {
+  if (application.Initialize()) {
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
 
@@ -84,6 +84,8 @@ int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cm
 
       glfwSwapBuffers(window);
     }
+
+    application.Terminate();
   }
 
   ImGui_ImplOpenGL3_Shutdown();

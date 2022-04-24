@@ -14,5 +14,9 @@ private:
   AudioSystem audio;
 
 public:
-  int Run(Parameters params);
+  bool Initialize(uint32_t sample_rate);
+  void Terminate();
+
+  void Play(Parameters params);
+  void Stop();
 };

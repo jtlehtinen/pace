@@ -94,3 +94,8 @@ bool AudioSystem::Play(const std::vector<Stereo>& samples, uint32_t sample_rate)
 
   return true;
 }
+
+void AudioSystem::Stop() {
+  DestroySoundBuffer(buffer);
+  buffer = nullptr;
+}

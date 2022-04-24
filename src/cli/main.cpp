@@ -1,5 +1,34 @@
 #include <string.h>
+#include <signal.h>
 #include "core/metronome.h"
+
+namespace {
+  struct Signal {
+    HANDLE event;
+
+    Signal() {
+      event = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    }
+
+    ~Signal() {
+      CloseHandle(event);
+    }
+
+    void Trigger() {
+      SetEvent(event);
+    }
+
+    void Wait() {
+      WaitForSingleObjectEx(event, INFINITE, false);
+    }
+
+    bool Valid() const {
+      return event != INVALID_HANDLE_VALUE;
+    }
+  };
+
+  Signal quit;
+}
 
 constexpr uint32_t kMinTempo = 60;
 constexpr uint32_t kMaxTempo = 300;
@@ -30,6 +59,8 @@ void PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+  if (!quit.Valid()) return 1;
+
   Parameters params;
   bool help = false;
 
@@ -70,5 +101,18 @@ int main(int argc, const char* argv[]) {
   }
 
   Metronome metronome;
-  return metronome.Run(params);
+  if (!metronome.Initialize(params.sample_rate)) {
+    return 1;
+  }
+
+  auto InterruptHandler = [](int signal) { quit.Trigger(); };
+  signal(SIGINT, InterruptHandler);
+
+  metronome.Play(params);
+
+  quit.Wait();
+
+  metronome.Terminate();
+
+  return 0;
 }
