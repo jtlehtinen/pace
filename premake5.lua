@@ -4,8 +4,7 @@ workspace "pace"
   language "C++"
   cppdialect "C++20"
   flags { "MultiProcessorCompile", "FatalWarnings" }
-
-include "ext/premake5.lua"
+  startproject "pace-gui"
 
 
 filter { "system:windows" }
@@ -17,46 +16,51 @@ filter { "platforms:win64" }
   architecture "x64"
 
 
-filter "configurations:debug"
-  runtime "Debug"
-  defines { "METRONOME_DEBUG" }
-  optimize "Off"
-  symbols "On"
-
-
-filter "configurations:release"
-  runtime "Release"
-  optimize "On"
-  symbols "On"
+include "ext/premake5.lua"
 
 
 function common_project_configuration()
   systemversion "latest"
   location "project/"
   targetdir "project/bin/%{cfg.platform}-%{cfg.buildcfg}/%{prj.name}"
-  includedirs { "src" }
-  editandcontinue "Off"
-  staticruntime "On"
+  editandcontinue "off"
+
+  filter "configurations:debug"
+    staticruntime "on"
+    runtime "Debug"
+    defines { "METRONOME_DEBUG" }
+    optimize "off"
+    symbols "on"
+
+
+  filter "configurations:release"
+    staticruntime "on"
+    runtime "Release"
+    optimize "on"
+    symbols "on"
 end
 
 
 project "core"
-  common_project_configuration()
   kind "StaticLib"
+  includedirs { "src" }
   files {"src/core/*.h", "src/core/*.cpp"}
-
+  common_project_configuration()
 
 project "pace-cli"
-  common_project_configuration()
   kind "ConsoleApp"
+  includedirs { "src" }
   files {"src/cli/*.h", "src/cli/*.cpp" }
   flags { "NoIncrementalLink", "NoPCH" }
   links { "core" }
+  common_project_configuration()
 
 
 project "pace-gui"
-  common_project_configuration()
   kind "WindowedApp"
+  includedirs {"src", "ext/imgui", "ext/glfw/include"}
   files {"src/gui/*.h", "src/gui/*.cpp" }
   flags { "NoIncrementalLink", "NoPCH" }
-  links { "core", "glfw", "imgui" }
+  links { "core", "glfw", "imgui", "opengl32.lib" }
+  common_project_configuration()
+

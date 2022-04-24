@@ -1,16 +1,7 @@
-filter { "system:windows" }
-  platforms { "win64" }
-
-
-filter { "platforms:win64" }
-  defines { "_CRT_SECURE_NO_WARNINGS", "WIN32_LEAN_AND_MEAN", "NOMINMAX" }
-  architecture "x64"
-
-
 project "glfw"
   kind "StaticLib"
+  editandcontinue "off"
   language "C"
-  staticruntime "On"
   targetdir "../project/bin/%{cfg.platform}-%{cfg.buildcfg}/%{prj.name}"
 
   files {
@@ -70,24 +61,22 @@ project "glfw"
       "_CRT_SECURE_NO_WARNINGS"
     }
 
-    links {
-      "Dwmapi.lib"
-    }
-
   filter "configurations:debug"
+    staticruntime "on"
     runtime "Debug"
-    symbols "On"
+    symbols "on"
 
   filter "configurations:release"
+    staticruntime "on"
     runtime "Release"
-    optimize "On"
-    symbols "On"
+    optimize "on"
+    symbols "on"
 
 
 project "imgui"
   kind "StaticLib"
+  editandcontinue "off"
   language "C++"
-  staticruntime "On"
   targetdir "../project/bin/%{cfg.platform}-%{cfg.buildcfg}/%{prj.name}"
 
   files {
@@ -113,10 +102,12 @@ project "imgui"
     cppdialect "C++20"
 
   filter "configurations:debug"
+    staticruntime "on"
     runtime "Debug"
-    symbols "On"
+    symbols "on"
 
   filter "configurations:release"
+    staticruntime "on"
     runtime "Release"
-    optimize "On"
-    symbols "On"
+    optimize "on"
+    symbols "on"
