@@ -1,7 +1,7 @@
 #include "application.h"
 #include "imgui.h"
 
-constexpr int kMinTempo = 120;
+constexpr int kMinTempo = 60;
 constexpr int kMaxTempo = 300;
 
 constexpr int kMinEmphasis = 1;
