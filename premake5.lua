@@ -5,6 +5,8 @@ workspace "pace"
   cppdialect "C++20"
   flags { "MultiProcessorCompile", "FatalWarnings" }
 
+include "ext/premake5.lua"
+
 
 filter { "system:windows" }
   platforms { "win64" }
@@ -16,17 +18,20 @@ filter { "platforms:win64" }
 
 
 filter "configurations:debug"
+  runtime "Debug"
   defines { "METRONOME_DEBUG" }
   optimize "Off"
   symbols "On"
 
 
 filter "configurations:release"
+  runtime "Release"
   optimize "On"
   symbols "On"
 
 
 function common_project_configuration()
+  systemversion "latest"
   location "project/"
   targetdir "project/bin/%{cfg.platform}-%{cfg.buildcfg}/%{prj.name}"
   includedirs { "src" }
@@ -54,4 +59,4 @@ project "pace-gui"
   kind "WindowedApp"
   files {"src/gui/*.h", "src/gui/*.cpp" }
   flags { "NoIncrementalLink", "NoPCH" }
-  links { "core" }
+  links { "core", "glfw", "imgui" }
