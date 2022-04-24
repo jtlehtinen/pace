@@ -1,6 +1,15 @@
 #include <string.h>
 #include "metronome.h"
 
+constexpr uint32_t kMinTempo = 60;
+constexpr uint32_t kMaxTempo = 300;
+
+constexpr uint32_t kMinEmphasis = 1;
+constexpr uint32_t kMaxEmphasis = 36;
+
+constexpr uint32_t kMinSubdivision = 1;
+constexpr uint32_t kMaxSubdivision = 4;
+
 void PrintUsage() {
   printf("pace is cli metronome\n\n");
   printf("USAGE:\n");
@@ -8,13 +17,13 @@ void PrintUsage() {
   printf("OPTIONS\n");
 
   printf("  -tempo int\n");
-  printf("  \ttempo in beats per minute, range [60, 300]\n");
+  printf("  \ttempo in beats per minute, range [%u, %u]\n", kMinTempo, kMaxTempo);
 
   printf("  -emp int\n");
-  printf("  \tinterval between emphasized quarter notes, range [1, 36]\n");
+  printf("  \tinterval between emphasized quarter notes, range [%u, %u]\n", kMinEmphasis, kMaxEmphasis);
 
   printf("  -subdiv int\n");
-  printf("  \tsubdivision of each quarter note, range [1, 4]\n");
+  printf("  \tsubdivision of each quarter note, range [%u, %u]\n", kMinSubdivision, kMaxSubdivision);
 
   printf("  -help\n");
   printf("  \tdispay this help text\n");
@@ -42,29 +51,20 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
 
-  constexpr uint32_t kMinTempo = 60;
-  constexpr uint32_t kMaxTempo = 300;
-
-  constexpr uint32_t kMinEmphasis = 1;
-  constexpr uint32_t kMaxEmphasis = 36;
-
-  constexpr uint32_t kMinSubdivision = 1;
-  constexpr uint32_t kMaxSubdivision = 4;
-
   if (params.tempo < kMinTempo || params.tempo > kMaxTempo) {
-    fprintf(stderr, "ERROR: invalid tempo '%d', must be between %d and %d\n\n",
+    fprintf(stderr, "ERROR: invalid tempo '%u', must be between %u and %u\n\n",
       params.tempo, kMinTempo, kMaxTempo);
     return 0;
   }
 
   if (params.emphasis < kMinEmphasis || params.emphasis > kMaxEmphasis) {
-    fprintf(stderr, "ERROR: invalid emphasis '%d', must be between %d and %d\n\n",
+    fprintf(stderr, "ERROR: invalid emphasis '%u', must be between %u and %u\n\n",
       params.emphasis, kMinEmphasis, kMaxEmphasis);
     return 0;
   }
 
   if (params.subdivision < kMinSubdivision || params.subdivision > kMaxSubdivision) {
-    fprintf(stderr, "ERROR: invalid subdivision '%d', must be between %d and %d\n\n",
+    fprintf(stderr, "ERROR: invalid subdivision '%u', must be between %u and %u\n\n",
       params.subdivision, kMinSubdivision, kMaxSubdivision);
     return 0;
   }

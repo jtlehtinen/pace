@@ -28,5 +28,5 @@ public:
   bool Initialize(uint32_t sample_rate);
   void Terminate();
 
-  bool Play(const std::vector<Stereo>& samples, size_t sample_rate);
+  bool Play(const std::vector<Stereo>& samples, uint32_t sample_rate);
 };

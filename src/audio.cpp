@@ -1,20 +1,20 @@
 #include "audio.h"
 
 namespace {
-  SoundBuffer* CreateSoundBuffer(IXAudio2* xaudio, const std::vector<Stereo>& samples, size_t sample_rate) {
+  SoundBuffer* CreateSoundBuffer(IXAudio2* xaudio, const std::vector<Stereo>& samples, uint32_t sample_rate) {
     WAVEFORMATEX format = {};
     format.wFormatTag = WAVE_FORMAT_PCM;
     format.nChannels = 2;
-    format.nSamplesPerSec = static_cast<DWORD>(sample_rate);
-    format.nAvgBytesPerSec = static_cast<DWORD>(sample_rate* sizeof(Stereo));
-    format.nBlockAlign = sizeof(Stereo);
-    format.wBitsPerSample = sizeof(SoundSample) * 8;
-    format.cbSize = 0;
+    format.nSamplesPerSec = sample_rate;
+    format.nAvgBytesPerSec = sample_rate * static_cast<DWORD>(sizeof(Stereo));
+    format.nBlockAlign = static_cast<WORD>(sizeof(Stereo));
+    format.wBitsPerSample = static_cast<WORD>(sizeof(SoundSample)) * 8;
 
     SoundBuffer* sb = new SoundBuffer();
     sb->samples = samples;
 
     if (FAILED(xaudio->CreateSourceVoice(&sb->voice, &format, XAUDIO2_VOICE_NOPITCH, 1.0f))) {
+      delete sb;
       return nullptr;
     }
 
@@ -83,7 +83,7 @@ void AudioSystem::Terminate() {
   CoUninitialize(); // @TODO: unnecessary
 }
 
-bool AudioSystem::Play(const std::vector<Stereo>& samples, size_t sample_rate) {
+bool AudioSystem::Play(const std::vector<Stereo>& samples, uint32_t sample_rate) {
   if (samples.size() * sizeof(Stereo) > XAUDIO2_MAX_BUFFER_BYTES) {
     return false;
   }
