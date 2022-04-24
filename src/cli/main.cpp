@@ -1,5 +1,5 @@
 #include <string.h>
-#include "metronome.h"
+#include "core/metronome.h"
 
 constexpr uint32_t kMinTempo = 60;
 constexpr uint32_t kMaxTempo = 300;
@@ -34,15 +34,15 @@ int main(int argc, const char* argv[]) {
   bool help = false;
 
   for (int i = 1; i < argc; ++i) {
+    // @TODO: Handle invalid args better...
     if (strcmp(argv[i], "-tempo") == 0 && i < (argc - 1)) {
       params.tempo = static_cast<uint32_t>(atoi(argv[++i]));
-    } else if (strcmp(argv[i], "-help") == 0) {
-      help = true;
     } else if (strcmp(argv[i], "-emp") == 0 && i < (argc - 1)) {
       params.emphasis = static_cast<uint32_t>(atoi(argv[++i]));
     } else if (strcmp(argv[i], "-subdiv") == 0 && i < (argc - 1)) {
-      // @TODO: Validate before casting...
       params.subdivision = static_cast<uint32_t>(atoi(argv[++i]));
+    } else if (strcmp(argv[i], "-help") == 0) {
+      help = true;
     }
   }
 

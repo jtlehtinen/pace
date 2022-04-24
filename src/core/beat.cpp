@@ -22,6 +22,7 @@ namespace {
     double ease_region = 0.3;
     return Smoothstep(0.0, ease_region, u) - Smoothstep(1.0 - ease_region, 1.0, u);
   }
+
 }
 
 std::vector<Stereo> Beat::Generate(double sample_rate, double tempo, uint32_t subdivision, uint32_t emphasis) {
