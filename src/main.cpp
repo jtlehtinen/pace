@@ -1,5 +1,4 @@
 #include <string.h>
-#include "beat.h"
 #include "metronome.h"
 
 void PrintUsage() {
