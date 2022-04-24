@@ -77,7 +77,7 @@ void Application::Render() {
     update_countdown = 30;
   }
 
-  if (update_countdown == 0) {
+  if (playing && update_countdown == 0) {
     metronome.Stop();
 
     Parameters params = {
