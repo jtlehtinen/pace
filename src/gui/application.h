@@ -25,10 +25,9 @@ class Application {
   private:
     UIState state;
     Metronome metronome;
-    bool playing = false;
-    int64_t update_countdown = 0;
 
-    uint32_t shader_program = 0;
+    uint32_t tempo_shader = 0;
+    uint32_t subdivision_shader = 0;
 
   public:
     Application();

@@ -25,7 +25,7 @@ int main() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window = glfwCreateWindow(400, 640, "pace", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(400, 480, "pace", nullptr, nullptr);
   if (window == nullptr)
     return 1;
 
