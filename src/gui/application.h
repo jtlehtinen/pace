@@ -28,6 +28,8 @@ class Application {
     bool playing = false;
     int64_t update_countdown = 0;
 
+    uint32_t shader_program = 0;
+
   public:
     Application();
     ~Application();

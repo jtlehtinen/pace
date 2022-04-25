@@ -14,7 +14,8 @@ static void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "glfw Error %d: %s\n", error, description);
 }
 
-int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cmdLine, int showCode) {
+//int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cmdLine, int showCode) {
+int main() {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
     return 1;
@@ -24,7 +25,7 @@ int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cm
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window = glfwCreateWindow(400, 240, "pace", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(400, 640, "pace", nullptr, nullptr);
   if (window == nullptr)
     return 1;
 
