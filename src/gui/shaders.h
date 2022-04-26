@@ -1,5 +1,33 @@
 #pragma once
 
+namespace Shaders::Background {
+
+static const char* vertex_shader_source = R"(
+#version 460 core
+
+void main() {
+  float x = -1.0 + float((gl_VertexID & 1) << 2);
+  float y = -1.0 + float((gl_VertexID & 2) << 1);
+  gl_Position = vec4(x, y, 0, 1.0);
+}
+)";
+
+static const char* fragment_shader_source = R"(
+#version 460 core
+
+layout(location = 0) uniform vec2 u_resolution;
+
+out vec4 o_color;
+
+void main() {
+  float gradient = (1.0 - gl_FragCoord.y / u_resolution.y) * 0.4;
+  vec3 c = gradient * vec3(0.4, 0.8, 1.0);
+  o_color = vec4(vec3(c), 1.0);
+}
+)";
+
+}
+
 namespace Shaders::Tempo {
 
 static const char* vertex_shader_source = R"(
@@ -57,14 +85,12 @@ void main() {
   float angle = atan(p.y, p.x) / kTau;
   float len = length(p);
 
-  float r = ring(0.35, 0.42, 0.03, len);
+  float r = ring(0.35, 0.42, 0.02, len);
 
-  vec3 background_color = vec3(0.06);
+  vec3 c = 2.0 * hue2rgb(angle + Time / 6.0);
+  float alpha = mix(0.0, 1.0, r);
 
-  vec3 c = 2.0 * r * hue2rgb(angle + Time / 6.0);
-  c = mix(background_color, c, smoothstep(0.0, 0.3, r));
-
-  o_color = vec4(c, 1.0);
+  o_color = vec4(c, alpha);
 }
 )";
 
@@ -89,9 +115,14 @@ void main() {
 static const char* fragment_shader_source = R"(
 #version 330 core
 
+const int STATE_HOVERED = 1;
+const int STATE_ACTIVE = 2;
+
 uniform vec4 BBox;
 uniform float Time;
 uniform int subdiv;
+uniform int state;
+uniform bool selected;
 
 layout (location = 0) out vec4 o_color;
 
@@ -223,7 +254,13 @@ void main() {
   uv *= scale;
 
   vec3 background_color = vec3(0.06);
-  vec3 foreground_color = vec3(1.0);
+  if (state == STATE_HOVERED) background_color = vec3(0.16);
+  if (state == STATE_ACTIVE) background_color = vec3(0.26);
+
+  vec3 foreground_color = vec3(0.5);
+  if (state == STATE_HOVERED) foreground_color = vec3(0.8);
+  if (state == STATE_ACTIVE) foreground_color = vec3(1.0);
+  if (selected) foreground_color = vec3(0.0, 1.0, 0.0);
 
   float d = 0.0;
   if (subdiv == 0) d = quarter_note(uv);
@@ -231,8 +268,8 @@ void main() {
   else if (subdiv == 2) d = triplet_note(uv);
   else if (subdiv == 3) d = sixteenth_note(uv);
 
-  d = smoothstep(0.03, 0.0, d);
-  vec3 c = mix(background_color, foreground_color, d);
+  vec3 c = foreground_color;
+  float alpha = smoothstep(0.04, 0.0, d);
 
 #if 0
   if (segment(uv, vec2(-1.0, 0.0), vec2(1.0, 0.0)) < 0.01) c = vec3(1.0, 0.0, 0.0);
@@ -243,7 +280,7 @@ void main() {
   if (segment(uv, vec2(0.0, -1.0), vec2(0.0, 1.0)) < 0.005) c = vec3(1.0, 0.0, 0.0);
 #endif
 
-  o_color = vec4(c, 1.0);
+  o_color = vec4(c, alpha);
 }
 )";
 

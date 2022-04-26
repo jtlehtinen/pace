@@ -14,18 +14,18 @@ static void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "glfw Error %d: %s\n", error, description);
 }
 
-//int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cmdLine, int showCode) {
-int main() {
+int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cmdLine, int showCode) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
     return 1;
 
   const char* glsl_version = "#version 330 core";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-  GLFWwindow* window = glfwCreateWindow(400, 480, "pace", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(400, 570, "pace", nullptr, nullptr);
   if (window == nullptr)
     return 1;
 
@@ -52,11 +52,17 @@ int main() {
 
   ImFontConfig font_config;
   font_config.FontDataOwnedByAtlas = false;
-  ImFont* open_sans_font = io.Fonts->AddFontFromMemoryTTF((void*)OpenSansFont::data, sizeof(OpenSansFont::data), 24.0f, &font_config);
+  ImFont* open_sans_font = io.Fonts->AddFontFromMemoryTTF((void*)OpenSansFont::data, sizeof(OpenSansFont::data), 42.0f, &font_config);
+  ImFont* open_sans_font_large = io.Fonts->AddFontFromMemoryTTF((void*)OpenSansFont::data, sizeof(OpenSansFont::data), 128.0f, &font_config);
   io.FontDefault = open_sans_font;
 
+  ImGuiFonts fonts = {
+    .normal = open_sans_font,
+    .large = open_sans_font_large,
+  };
+
   Application application;
-  if (application.Initialize()) {
+  if (application.Initialize(fonts)) {
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
 
@@ -64,16 +70,15 @@ int main() {
       ImGui_ImplGlfw_NewFrame();
       ImGui::NewFrame();
 
-      application.Render();
-
-      ImGui::Render();
-
       int vw, vh;
       glfwGetFramebufferSize(window, &vw, &vh);
       glViewport(0, 0, vw, vh);
-
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT);
+
+      application.Render(vw, vh);
+      ImGui::Render();
+
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
       if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {

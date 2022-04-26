@@ -2,10 +2,17 @@
 
 #include "core/metronome.h"
 
+struct ImFont;
+
+struct ImGuiFonts {
+  ImFont* normal;
+  ImFont* large;
+};
+
 struct UIState {
-  int tempo = 120;
+  float tempo = 120.0f;
+  int beats = 4;
   int subdivision = 1;
-  int emphasis = 4;
 
   bool operator ==(UIState rhs) const;
   bool operator !=(UIState rhs) const;
@@ -14,7 +21,7 @@ struct UIState {
 inline bool UIState::operator ==(UIState rhs) const {
   return this->tempo == rhs.tempo &&
     this->subdivision == rhs.subdivision &&
-    this->emphasis == rhs.emphasis;
+    this->beats == rhs.beats;
 }
 
 inline bool UIState::operator !=(UIState rhs) const {
@@ -28,6 +35,10 @@ class Application {
 
     uint32_t tempo_shader = 0;
     uint32_t subdivision_shader = 0;
+    uint32_t background_shader = 0;
+    uint32_t dummy_vao = 0;
+
+    ImGuiFonts fonts;
 
   public:
     Application();
@@ -36,7 +47,7 @@ class Application {
     Application(const Application& other) = delete;
     void operator=(const Application& rhs) = delete;
 
-    bool Initialize();
+    bool Initialize(ImGuiFonts fonts);
     void Terminate();
-    void Render();
+    void Render(uint32_t window_width, uint32_t window_height);
 };

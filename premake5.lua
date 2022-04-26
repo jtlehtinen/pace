@@ -57,7 +57,7 @@ project "pace-cli"
 
 
 project "pace-gui"
-  kind "ConsoleApp"
+  kind "WindowedApp"
   includedirs {"src", "ext/imgui", "ext/glfw/include", "ext/glad", "ext/imgui-knobs"}
   files {"src/gui/*.h", "src/gui/*.cpp" }
   flags { "NoIncrementalLink", "NoPCH" }
