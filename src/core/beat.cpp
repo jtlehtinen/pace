@@ -25,8 +25,8 @@ namespace {
 
 }
 
-std::vector<Stereo> Beat::Generate(double sample_rate, double tempo, uint32_t subdivision, uint32_t emphasis) {
-  size_t quarter_notes = emphasis;
+std::vector<Stereo> Beat::Generate(double sample_rate, double tempo, uint32_t subdivision, uint32_t beats) {
+  size_t quarter_notes = beats;
 
   constexpr double kSecondsInMinute = 60.0;
   double length_in_seconds = quarter_notes * kSecondsInMinute / tempo;
@@ -44,7 +44,7 @@ std::vector<Stereo> Beat::Generate(double sample_rate, double tempo, uint32_t su
   constexpr size_t tick_length_in_samples = 2048;
 
   for (size_t i = 0; i < tick_samples.size(); ++i) {
-    bool emp = ((i / subdivision) % emphasis) == 0;
+    bool emp = ((i / subdivision) % beats) == 0;
     bool quarter = (i % subdivision) == 0;
 
     double frequency = (emp && quarter) ? Frequency::C6 : quarter ? Frequency::C5 : Frequency::C4;

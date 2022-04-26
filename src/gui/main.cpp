@@ -25,7 +25,7 @@ int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cm
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-  GLFWwindow* window = glfwCreateWindow(400, 570, "pace", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(350, 140, "pace", nullptr, nullptr);
   if (window == nullptr)
     return 1;
 
@@ -52,17 +52,11 @@ int __stdcall wWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPWSTR cm
 
   ImFontConfig font_config;
   font_config.FontDataOwnedByAtlas = false;
-  ImFont* open_sans_font = io.Fonts->AddFontFromMemoryTTF((void*)OpenSansFont::data, sizeof(OpenSansFont::data), 42.0f, &font_config);
-  ImFont* open_sans_font_large = io.Fonts->AddFontFromMemoryTTF((void*)OpenSansFont::data, sizeof(OpenSansFont::data), 128.0f, &font_config);
+  ImFont* open_sans_font = io.Fonts->AddFontFromMemoryTTF((void*)OpenSansFont::data, sizeof(OpenSansFont::data), 24.0f, &font_config);
   io.FontDefault = open_sans_font;
 
-  ImGuiFonts fonts = {
-    .normal = open_sans_font,
-    .large = open_sans_font_large,
-  };
-
   Application application;
-  if (application.Initialize(fonts)) {
+  if (application.Initialize()) {
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
 

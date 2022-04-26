@@ -111,33 +111,3 @@ project "imgui"
     runtime "Release"
     optimize "on"
     symbols "on"
-
-
-project "glad"
-  kind "StaticLib"
-  editandcontinue "off"
-  language "C"
-  targetdir "../project/bin/%{cfg.platform}-%{cfg.buildcfg}/%{prj.name}"
-
-  files {
-    "glad/glad.h",
-    "glad/glad.c",
-    "glad/KHR/khrplatform.h",
-  }
-
-  filter "system:windows"
-    systemversion "latest"
-
-  filter "system:linux"
-    systemversion "latest"
-
-  filter "configurations:debug"
-    staticruntime "on"
-    runtime "Debug"
-    symbols "on"
-
-  filter "configurations:release"
-    staticruntime "on"
-    runtime "Release"
-    optimize "on"
-    symbols "on"

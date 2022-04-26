@@ -2,6 +2,7 @@
 #include "beat.h"
 
 bool Metronome::Initialize(uint32_t sample_rate) {
+  this->sample_rate = sample_rate;
   return audio.Initialize(sample_rate);
 }
 
@@ -9,9 +10,9 @@ void Metronome::Terminate() {
   audio.Terminate();
 }
 
-void Metronome::Play(Parameters params) {
-  auto samples = Beat::Generate(params.sample_rate, params.tempo, params.subdivision, params.emphasis);
-  audio.Play(samples, params.sample_rate);
+void Metronome::Play(MetronomeParameters params) {
+  auto samples = Beat::Generate(sample_rate, params.tempo, params.subdivision, params.beats);
+  audio.Play(samples, sample_rate);
 }
 
 void Metronome::Stop() {

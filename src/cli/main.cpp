@@ -30,15 +30,6 @@ namespace {
   Signal quit;
 }
 
-constexpr uint32_t kMinTempo = 60;
-constexpr uint32_t kMaxTempo = 300;
-
-constexpr uint32_t kMinEmphasis = 1;
-constexpr uint32_t kMaxEmphasis = 36;
-
-constexpr uint32_t kMinSubdivision = 1;
-constexpr uint32_t kMaxSubdivision = 4;
-
 void PrintUsage() {
   printf("pace is cli metronome\n\n");
   printf("USAGE:\n");
@@ -46,13 +37,13 @@ void PrintUsage() {
   printf("OPTIONS\n");
 
   printf("  -tempo int\n");
-  printf("  \ttempo in beats per minute, range [%u, %u]\n", kMinTempo, kMaxTempo);
+  printf("  \ttempo in beats per minute, range [%u, %u]\n", kMetronomeMinTempo, kMetronomeMaxTempo);
 
-  printf("  -emp int\n");
-  printf("  \tinterval between emphasized quarter notes, range [%u, %u]\n", kMinEmphasis, kMaxEmphasis);
+  printf("  -beats int\n");
+  printf("  \tinterval between emphasized quarter notes, range [%u, %u]\n", kMetronomeMinBeats, kMetronomeMaxBeats);
 
   printf("  -subdiv int\n");
-  printf("  \tsubdivision of each quarter note, range [%u, %u]\n", kMinSubdivision, kMaxSubdivision);
+  printf("  \tsubdivision of each quarter note, range [%u, %u]\n", kMetronomeMinSubdivision, kMetronomeMaxSubdivision);
 
   printf("  -help\n");
   printf("  \tdispay this help text\n");
@@ -61,15 +52,15 @@ void PrintUsage() {
 int main(int argc, const char* argv[]) {
   if (!quit.Valid()) return 1;
 
-  Parameters params;
+  MetronomeParameters params;
   bool help = false;
 
   for (int i = 1; i < argc; ++i) {
     // @TODO: Handle invalid args better...
     if (strcmp(argv[i], "-tempo") == 0 && i < (argc - 1)) {
       params.tempo = static_cast<uint32_t>(atoi(argv[++i]));
-    } else if (strcmp(argv[i], "-emp") == 0 && i < (argc - 1)) {
-      params.emphasis = static_cast<uint32_t>(atoi(argv[++i]));
+    } else if (strcmp(argv[i], "-beats") == 0 && i < (argc - 1)) {
+      params.beats = static_cast<uint32_t>(atoi(argv[++i]));
     } else if (strcmp(argv[i], "-subdiv") == 0 && i < (argc - 1)) {
       params.subdivision = static_cast<uint32_t>(atoi(argv[++i]));
     } else if (strcmp(argv[i], "-help") == 0) {
@@ -82,26 +73,26 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
 
-  if (params.tempo < kMinTempo || params.tempo > kMaxTempo) {
+  if (params.tempo < kMetronomeMinTempo || params.tempo > kMetronomeMaxTempo) {
     fprintf(stderr, "ERROR: invalid tempo '%u', must be between %u and %u\n\n",
-      params.tempo, kMinTempo, kMaxTempo);
+      params.tempo, kMetronomeMinTempo, kMetronomeMaxTempo);
     return 0;
   }
 
-  if (params.emphasis < kMinEmphasis || params.emphasis > kMaxEmphasis) {
-    fprintf(stderr, "ERROR: invalid emphasis '%u', must be between %u and %u\n\n",
-      params.emphasis, kMinEmphasis, kMaxEmphasis);
+  if (params.beats < kMetronomeMinBeats || params.beats > kMetronomeMaxBeats) {
+    fprintf(stderr, "ERROR: invalid beats '%u', must be between %u and %u\n\n",
+      params.beats, kMetronomeMinBeats, kMetronomeMaxBeats);
     return 0;
   }
 
-  if (params.subdivision < kMinSubdivision || params.subdivision > kMaxSubdivision) {
+  if (params.subdivision < kMetronomeMinSubdivision || params.subdivision > kMetronomeMaxSubdivision) {
     fprintf(stderr, "ERROR: invalid subdivision '%u', must be between %u and %u\n\n",
-      params.subdivision, kMinSubdivision, kMaxSubdivision);
+      params.subdivision, kMetronomeMinSubdivision, kMetronomeMaxSubdivision);
     return 0;
   }
 
   Metronome metronome;
-  if (!metronome.Initialize(params.sample_rate)) {
+  if (!metronome.Initialize()) {
     return 1;
   }
 

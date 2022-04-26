@@ -58,9 +58,9 @@ project "pace-cli"
 
 project "pace-gui"
   kind "WindowedApp"
-  includedirs {"src", "ext/imgui", "ext/glfw/include", "ext/glad", "ext/imgui-knobs"}
+  includedirs {"src", "ext/imgui", "ext/glfw/include", "ext/imgui-knobs"}
   files {"src/gui/*.h", "src/gui/*.cpp" }
   flags { "NoIncrementalLink", "NoPCH" }
-  links { "core", "glfw", "imgui", "glad", "opengl32.lib" }
+  links { "core", "glfw", "imgui", "opengl32.lib" }
   common_project_configuration()
 

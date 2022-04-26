@@ -1,51 +1,113 @@
 #include "application.h"
 #include "imgui.h"
 #include "imgui-knobs.h"
-#include "widgets.h"
-#include "ogl.h"
-#include "shaders.h"
+#include <math.h>
 
-constexpr int kMinTempo = 60;
-constexpr int kMaxTempo = 300;
+namespace {
 
-constexpr int kMinEmphasis = 1;
-constexpr int kMaxEmphasis = 32;
+  bool PlayStopButton(bool playing) {
+    bool clicked = ImGui::InvisibleButton("play", ImVec2(50.0f, 50.0f));
 
-Application::Application() {
+    ImVec2 min = ImGui::GetItemRectMin();
+    ImVec2 max = ImGui::GetItemRectMax();
+    bool hovered = ImGui::IsItemHovered();
+    bool active = ImGui::IsItemActive();
+
+    auto draw = ImGui::GetWindowDrawList();
+
+    auto Lightness = [](bool active, bool hovered) {
+      if (active) return 1.0f;
+      if (hovered) return 0.9f;
+      return 0.7f;
+    };
+
+    auto FrameColor = [](bool active, bool hovered) {
+      if (active) return ImGui::GetColorU32(ImGuiCol_ButtonActive);
+      if (hovered) return ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+      return ImGui::GetColorU32(ImGuiCol_Button);
+    };
+
+    if (playing) {
+      float width = max.x - min.x;
+      float height = max.y - min.y;
+      float hpad = width * 0.2f;
+      float vpad = height * 0.2f;
+
+      auto lightness = Lightness(active, hovered);
+      auto fill_color = ImVec4(lightness * 0.8f, lightness * 0.17f, lightness * 0.17f, 1.0f);
+
+      draw->AddRect(min, max, FrameColor(active, hovered), 5.0f, 0, 3.0f);
+      draw->AddRectFilled(ImVec2(min.x + hpad, min.y + vpad), ImVec2(max.x - hpad, max.y - vpad), ImGui::GetColorU32(fill_color), 5.0f);
+    } else {
+      float width = max.x - min.x;
+      float height = max.y - min.y;
+      float hpad = width * 0.15f;
+      float vpad = height * 0.15f;
+
+      // @NOTE: Height of a equilateral triangle = side*sqrt(3)/2
+      float triheight = (max.x - min.x - 2.0f * hpad) * sqrtf(3.0f) * 0.5f;
+      hpad = (width - triheight) * 0.5f;
+
+      float minx = min.x + hpad;
+      float maxx = max.x - hpad;
+      float miny = min.y + vpad;
+      float maxy = max.y - vpad;
+      float midy = (miny + maxy) * 0.5f;
+
+      auto p0 = ImVec2(minx, miny);
+      auto p1 = ImVec2(maxx, midy);
+      auto p2 = ImVec2(minx, maxy);
+
+      auto lightness = Lightness(active, hovered);
+      auto fill_color = ImVec4(lightness * 0.17f, lightness * 0.8f, lightness * 0.44f, 1.0f);
+
+      draw->AddRect(min, max, FrameColor(active, hovered), 5.0f, 0, 3.0f);
+      draw->AddTriangleFilled(p0, p1, p2, ImGui::GetColorU32(fill_color));
+    }
+
+    return clicked;
+  };
 
 }
 
-Application::~Application() {
+void UIState::FixInvalidState() {
+  float min_tempo = static_cast<float>(kMetronomeMinTempo);
+  float max_tempo = static_cast<float>(kMetronomeMaxTempo);
 
+  float min_beats = static_cast<float>(kMetronomeMinBeats);
+  float max_beats = static_cast<float>(kMetronomeMaxBeats);
+
+  float min_subdivision = static_cast<float>(kMetronomeMinSubdivision);
+  float max_subdivision = static_cast<float>(kMetronomeMaxSubdivision);
+
+
+  if (tempo < min_tempo) tempo = min_tempo;
+  if (tempo > max_tempo) tempo = max_tempo;
+
+  if (beats < min_beats) beats = min_beats;
+  if (beats > max_beats) beats = max_beats;
+
+  if (subdivision < min_subdivision) subdivision = min_subdivision;
+  if (subdivision > max_subdivision) subdivision = max_subdivision;
 }
 
-bool Application::Initialize(ImGuiFonts fonts) {
-  if (!OGL::Initialize()) return false;
+MetronomeParameters UIState::ToMetronomeParameters() const {
+  return MetronomeParameters{
+    .tempo = static_cast<uint32_t>(roundf(tempo)),
+    .beats = static_cast<uint32_t>(roundf(beats)),
+    .subdivision = static_cast<uint32_t>(roundf(subdivision)),
+  };
+}
 
-  this->fonts = fonts;
-
-  tempo_shader = OGL::CreateProgram(Shaders::Tempo::vertex_shader_source, Shaders::Tempo::fragment_shader_source);
-  subdivision_shader = OGL::CreateProgram(Shaders::Subdivision::vertex_shader_source, Shaders::Subdivision::fragment_shader_source);
-  background_shader = OGL::CreateProgram(Shaders::Background::vertex_shader_source, Shaders::Background::fragment_shader_source);
-  glGenVertexArrays(1, &dummy_vao);
-
+bool Application::Initialize() {
   return metronome.Initialize(44100);
 }
 
 void Application::Terminate() {
-  OGL::DestroyProgram(subdivision_shader);
-  OGL::DestroyProgram(tempo_shader);
   metronome.Terminate();
 }
 
 void Application::Render(uint32_t window_width, uint32_t window_height) {
-  glUseProgram(background_shader);
-  glUniform2f(0, static_cast<GLfloat>(window_width), static_cast<GLfloat>(window_height));
-  glBindVertexArray(dummy_vao);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-  glBindVertexArray(0);
-  glUseProgram(0);
-
   #ifdef IMGUI_HAS_VIEWPORT
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -59,36 +121,42 @@ void Application::Render(uint32_t window_width, uint32_t window_height) {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground;
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize;
 
   bool open = true;
   ImGui::Begin("window", &open, window_flags);
 
-  Widgets::Beats(&state.beats, 1, 16);
+  auto before = state.ToMetronomeParameters();
 
-  static TempoContext tempo_ctx;
-  tempo_ctx = TempoContext{.shader = tempo_shader, .tempo = state.tempo};
-  Widgets::Tempo(&tempo_ctx, "tempo", fonts.large, 384.0f, 384.0f);
-  state.tempo = tempo_ctx.tempo;
+  // @TODO: ImGuiKnobs can set the parameter value out of the given [min, max] range.
 
-  static SubdivisionContext subdiv_ctx[4];
-  subdiv_ctx[0] = SubdivisionContext{.shader = subdivision_shader, .subdivision = 1, .selected = state.subdivision == 1};
-  subdiv_ctx[1] = SubdivisionContext{.shader = subdivision_shader, .subdivision = 2, .selected = state.subdivision == 2};
-  subdiv_ctx[2] = SubdivisionContext{.shader = subdivision_shader, .subdivision = 3, .selected = state.subdivision == 3};
-  subdiv_ctx[3] = SubdivisionContext{.shader = subdivision_shader, .subdivision = 4, .selected = state.subdivision == 4};
+  const float hspace = 30.0f;
+  ImGuiKnobs::WiperDotKnob("tempo", &state.tempo, kMetronomeMinTempo, kMetronomeMaxTempo, "%.0f", 50.0f);
+  ImGui::SameLine(0.0f, hspace);
 
-  if (Widgets::Subdivision(&subdiv_ctx[0], "subdivision1", 85.0f, 80.0f)) state.subdivision = 1;
-  ImGui::SameLine();
+  ImGuiKnobs::WiperDotKnob("beats", &state.beats, kMetronomeMinBeats, kMetronomeMaxBeats, "%.0f", 50.0f);
+  ImGui::SameLine(0.0f, hspace);
 
-  if (Widgets::Subdivision(&subdiv_ctx[1], "subdivision2", 85.0f, 80.0f)) state.subdivision = 2;
-  ImGui::SameLine();
+  ImGuiKnobs::WiperDotKnob("subdiv", &state.subdivision, kMetronomeMinSubdivision, kMetronomeMaxSubdivision, "%.0f", 50.0f);
+  ImGui::SameLine(0.0f, hspace);
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 40.0f);
 
-  if (Widgets::Subdivision(&subdiv_ctx[2], "subdivision3", 85.0f, 80.0f)) state.subdivision = 3;
-  ImGui::SameLine();
+  state.FixInvalidState();
 
-  if (Widgets::Subdivision(&subdiv_ctx[3], "subdivision4", 85.0f, 80.0f)) state.subdivision = 4;
+  if (PlayStopButton(state.playing)) {
+    state.playing = !state.playing;
+    if (state.playing) {
+      metronome.Play(state.ToMetronomeParameters());
+    } else {
+      metronome.Stop();
+    }
+  }
 
-  // @TODO: emphasis
+  auto after = state.ToMetronomeParameters();
+
+  if (after != before) {
+    // @TODO: Update player...
+  }
 
   ImGui::End();
   ImGui::PopStyleVar(2);
