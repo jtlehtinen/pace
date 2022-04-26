@@ -1,34 +1,7 @@
 #include <string.h>
 #include <signal.h>
 #include "core/metronome.h"
-
-namespace {
-  struct Signal {
-    HANDLE event;
-
-    Signal() {
-      event = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    }
-
-    ~Signal() {
-      CloseHandle(event);
-    }
-
-    void Trigger() {
-      SetEvent(event);
-    }
-
-    void Wait() {
-      WaitForSingleObjectEx(event, INFINITE, false);
-    }
-
-    bool Valid() const {
-      return event != INVALID_HANDLE_VALUE;
-    }
-  };
-
-  Signal quit;
-}
+#include "core/signal.h"
 
 void PrintUsage() {
   printf("pace is cli metronome\n\n");
@@ -48,6 +21,8 @@ void PrintUsage() {
   printf("  -help\n");
   printf("  \tdispay this help text\n");
 }
+
+static Signal quit;
 
 int main(int argc, const char* argv[]) {
   if (!quit.Valid()) return 1;

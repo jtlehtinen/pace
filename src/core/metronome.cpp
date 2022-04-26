@@ -12,7 +12,7 @@ void Metronome::Terminate() {
 
 void Metronome::Play(MetronomeParameters params) {
   auto samples = Beat::Generate(sample_rate, params.tempo, params.subdivision, params.beats);
-  audio.Play(samples, sample_rate);
+  audio.Play(samples);
 }
 
 void Metronome::Stop() {

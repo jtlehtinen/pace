@@ -1,48 +1,32 @@
 #include "audio.h"
 
 namespace {
-  SoundBuffer* CreateSoundBuffer(IXAudio2* xaudio, const std::vector<Stereo>& samples, uint32_t sample_rate) {
-    WAVEFORMATEX format = {};
-    format.wFormatTag = WAVE_FORMAT_PCM;
-    format.nChannels = 2;
-    format.nSamplesPerSec = sample_rate;
-    format.nAvgBytesPerSec = sample_rate * static_cast<DWORD>(sizeof(Stereo));
-    format.nBlockAlign = static_cast<WORD>(sizeof(Stereo));
-    format.wBitsPerSample = static_cast<WORD>(sizeof(SoundSample)) * 8;
+  void sound_thread_func(SoundOutput* so) {
+    while (!so->quit) {
+      so->callback.buffer_end.Wait();
 
-    SoundBuffer* sb = new SoundBuffer();
-    sb->samples = samples;
+      {
+        std::lock_guard<std::mutex> lock(so->mutex);
 
-    if (FAILED(xaudio->CreateSourceVoice(&sb->voice, &format, XAUDIO2_VOICE_NOPITCH, 1.0f))) {
-      delete sb;
-      return nullptr;
+        size_t sample_count = so->output_buffer.size();
+
+        size_t max_sample_index = so->samples.size();
+        size_t sample_index = so->sample_index;
+
+        for (size_t i = 0; i < sample_count; ++i) {
+          so->output_buffer[i] = so->samples[sample_index];
+          sample_index = (sample_index + 1) % max_sample_index;
+        }
+        so->sample_index = sample_index;
+      }
+
+      so->voice->SubmitSourceBuffer(&so->buffer);
     }
-
-    sb->buffer = {};
-    sb->buffer.AudioBytes = static_cast<uint32_t>(sb->samples.size() * sizeof(Stereo));
-    sb->buffer.pAudioData = reinterpret_cast<const BYTE*>(sb->samples.data());
-    sb->buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-
-    sb->voice->SubmitSourceBuffer(&sb->buffer);
-    sb->voice->Start(0);
-
-    return sb;
   }
+}
 
-  void PlaySoundBuffer(SoundBuffer* sb) {
-    if (!sb) return;
-
-    sb->voice->SubmitSourceBuffer(&sb->buffer);
-    sb->voice->Start(0);
-  }
-
-  void DestroySoundBuffer(SoundBuffer* sb) {
-    if (sb && sb->voice) {
-      sb->voice->Stop();
-      sb->voice->DestroyVoice();
-    }
-    delete sb;
-  }
+void VoiceCallback::OnBufferEnd(void* buffer_context) {
+  buffer_end.Trigger();
 }
 
 bool AudioSystem::Initialize(uint32_t sample_rate) {
@@ -68,11 +52,44 @@ bool AudioSystem::Initialize(uint32_t sample_rate) {
     return false;
   }
 
+  WAVEFORMATEX format = {};
+  format.wFormatTag = WAVE_FORMAT_PCM;
+  format.nChannels = 2;
+  format.nSamplesPerSec = sample_rate;
+  format.nAvgBytesPerSec = sample_rate * static_cast<DWORD>(sizeof(Stereo));
+  format.nBlockAlign = static_cast<WORD>(sizeof(Stereo));
+  format.wBitsPerSample = static_cast<WORD>(sizeof(SoundSample)) * 8;
+
+  sound_output.samples.resize(1, Stereo{});
+  sound_output.sample_index = 0;
+
+  sound_output.output_buffer.resize(sample_rate / 10, Stereo{});
+  sound_output.buffer = {};
+  sound_output.buffer.AudioBytes = static_cast<uint32_t>(sound_output.output_buffer.size() * sizeof(Stereo));
+  sound_output.buffer.pAudioData = reinterpret_cast<const BYTE*>(sound_output.output_buffer.data());
+  sound_output.buffer.LoopCount = XAUDIO2_NO_LOOP_REGION;
+
+  if (FAILED(xaudio->CreateSourceVoice(&sound_output.voice, &format, XAUDIO2_VOICE_NOPITCH, 1.0f, &sound_output.callback))) {
+    mastering_voice->DestroyVoice();
+    xaudio->Release();
+    CoUninitialize();
+    return false;
+  }
+
+  sound_output.voice->SubmitSourceBuffer(&sound_output.buffer);
+  sound_output.voice->Start(0);
+
+  sound_output_thread = std::thread(sound_thread_func, &sound_output);
+
   return true;
 }
 
 void AudioSystem::Terminate() {
-  DestroySoundBuffer(buffer);
+  sound_output.quit = true;
+  sound_output_thread.join();
+
+  sound_output.voice->Stop();
+  sound_output.voice->DestroyVoice();
 
   mastering_voice->DestroyVoice();
   mastering_voice = nullptr;
@@ -80,22 +97,18 @@ void AudioSystem::Terminate() {
   xaudio->Release();
   xaudio = nullptr;
 
-  CoUninitialize(); // @TODO: unnecessary
+  CoUninitialize();
 }
 
-bool AudioSystem::Play(const std::vector<Stereo>& samples, uint32_t sample_rate) {
-  if (samples.size() * sizeof(Stereo) > XAUDIO2_MAX_BUFFER_BYTES) {
-    return false;
-  }
-
-  DestroySoundBuffer(buffer);
-  buffer = CreateSoundBuffer(xaudio, samples, sample_rate);
-  PlaySoundBuffer(buffer);
-
+bool AudioSystem::Play(const std::vector<Stereo>& samples) {
+  std::lock_guard<std::mutex> lock(sound_output.mutex);
+  sound_output.samples = samples;
+  sound_output.sample_index = 0;
   return true;
 }
 
 void AudioSystem::Stop() {
-  DestroySoundBuffer(buffer);
-  buffer = nullptr;
+  std::lock_guard<std::mutex> lock(sound_output.mutex);
+  sound_output.samples.resize(1, Stereo{});
+  sound_output.sample_index = 0;
 }

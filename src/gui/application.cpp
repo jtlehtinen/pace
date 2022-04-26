@@ -153,9 +153,8 @@ void Application::Render(uint32_t window_width, uint32_t window_height) {
   }
 
   auto after = state.ToMetronomeParameters();
-
-  if (after != before) {
-    // @TODO: Update player...
+  if (after != before && state.playing) {
+    metronome.Play(state.ToMetronomeParameters());
   }
 
   ImGui::End();

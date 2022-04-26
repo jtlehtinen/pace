@@ -1,3 +1,5 @@
 # paceit
 
-CLI metronome.
+Simple metronome. CLI and GUI versions.
+
+![GUI version](shot.png)

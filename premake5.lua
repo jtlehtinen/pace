@@ -47,7 +47,9 @@ project "core"
   files {"src/core/*.h", "src/core/*.cpp"}
   common_project_configuration()
 
+
 project "pace-cli"
+  targetname "pace"
   kind "ConsoleApp"
   includedirs { "src" }
   files {"src/cli/*.h", "src/cli/*.cpp" }
@@ -57,6 +59,7 @@ project "pace-cli"
 
 
 project "pace-gui"
+  targetname "gpace"
   kind "WindowedApp"
   includedirs {"src", "ext/imgui", "ext/glfw/include", "ext/imgui-knobs"}
   files {"src/gui/*.h", "src/gui/*.cpp" }
